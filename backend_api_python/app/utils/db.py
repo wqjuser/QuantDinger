@@ -44,6 +44,8 @@ def init_database():
         from app.utils.logger import get_logger
         logger = get_logger(__name__)
         logger.info("PostgreSQL connection verified")
+        from app.utils.migrations import run_pending_migrations
+        run_pending_migrations()
     else:
         raise RuntimeError("Cannot connect to PostgreSQL. Check DATABASE_URL.")
 
