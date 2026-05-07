@@ -22,6 +22,12 @@
 # Backend Dockerfile tries Aliyun apt/PyPI first and falls back to official (no extra env).
 # For slow pulls of base images, optionally set IMAGE_PREFIX or Docker Engine registry-mirrors.
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-20m}
+    max-file: "${LOG_MAX_FILE:-5}"
+
 services:
   # ========================
   # PostgreSQL Database
@@ -30,6 +36,7 @@ services:
     image: ${IMAGE_PREFIX:-}postgres:16-alpine
     container_name: quantdinger-db
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-quantdinger}
       POSTGRES_USER: ${POSTGRES_USER:-quantdinger}
@@ -64,6 +71,7 @@ services:
     image: ${IMAGE_PREFIX:-}redis:7-alpine
     container_name: quantdinger-redis
     restart: unless-stopped
+    logging: *default-logging
     command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
     ports:
       - "${REDIS_PORT:-127.0.0.1:6379}:6379"
@@ -86,6 +94,7 @@ services:
         BASE_IMAGE: ${IMAGE_PREFIX:-}python:3.12-slim-bookworm
     container_name: quantdinger-backend
     restart: unless-stopped
+    logging: *default-logging
     depends_on:
       postgres:
         condition: service_healthy
@@ -141,6 +150,7 @@ services:
         RUNTIME_IMAGE: ${IMAGE_PREFIX:-}nginx:1.25-alpine
     container_name: quantdinger-frontend
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "${FRONTEND_PORT:-8888}:80"
     environment:

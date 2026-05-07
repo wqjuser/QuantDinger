@@ -96,9 +96,9 @@ def _is_single_user_mode() -> bool:
 def _get_client_ip() -> str:
     """Get client IP address from request"""
     # Check for proxy headers
-    if request.headers.get('X-Forwarded-For'):
+    if os.getenv('TRUST_PROXY_HEADERS_DIRECT', 'false').lower() == 'true' and request.headers.get('X-Forwarded-For'):
         return request.headers.get('X-Forwarded-For').split(',')[0].strip()
-    if request.headers.get('X-Real-IP'):
+    if os.getenv('TRUST_PROXY_HEADERS_DIRECT', 'false').lower() == 'true' and request.headers.get('X-Real-IP'):
         return request.headers.get('X-Real-IP')
     return request.remote_addr or '0.0.0.0'
 
@@ -201,10 +201,11 @@ def login():
                         'data': None
                     }), 401
             except Exception as e:
-                logger.warning(f"Multi-user auth failed, trying legacy: {e}")
+                logger.error(f"Multi-user auth failed: {e}")
+                return jsonify({'code': 500, 'msg': 'Authentication service unavailable', 'data': None}), 500
         
         # Fallback to legacy single-user mode
-        if not user:
+        if not user and _is_single_user_mode():
             user = authenticate_legacy(username, password)
         
         if not user:
@@ -275,7 +276,7 @@ def login():
             
     except Exception as e:
         logger.error(f"Login error: {e}")
-        return jsonify({'code': 500, 'msg': str(e), 'data': None}), 500
+        return jsonify({'code': 500, 'msg': 'Internal server error', 'data': None}), 500
 
 
 # =============================================================================

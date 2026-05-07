@@ -1,0 +1,11 @@
+.env
+.env.*
+node_modules/
+logs/
+*.log
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+.git/
+.gitignore

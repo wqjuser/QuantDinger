@@ -25,9 +25,11 @@ logs/
 # Environment
 .env
 .env.local
+.env.*
 
 # Data (在 docker-compose 中挂载)
 data/memory/*.db
+data/
 
 # Git
 .git/
@@ -36,6 +38,9 @@ data/memory/*.db
 # Tests
 tests/
 pytest_cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 
 # Documentation

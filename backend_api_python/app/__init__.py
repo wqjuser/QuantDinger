@@ -3,11 +3,13 @@ QuantDinger Python API - Flask application factory.
 """
 import math
 import logging
+import os
 import traceback
 
 from flask import Flask
 from flask.json.provider import DefaultJSONProvider
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.utils.logger import setup_logger, get_logger
 
@@ -50,6 +52,30 @@ def _sanitize(obj):
     return obj
 
 logger = get_logger(__name__)
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _split_csv(value: str):
+    return [item.strip() for item in (value or "").split(",") if item.strip()]
+
+
+def _configure_proxy_headers(app: Flask):
+    if _env_bool("TRUST_PROXY_HEADERS", True):
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
+
+def _configure_cors(app: Flask):
+    origins = _split_csv(os.getenv("CORS_ALLOWED_ORIGINS", ""))
+    if origins:
+        CORS(app, origins=origins)
+    else:
+        CORS(app)
+
 
 # Global singletons (avoid duplicate strategy threads).
 _trading_executor = None
@@ -225,7 +251,8 @@ def create_app(config_name='default'):
 
     app.config['JSON_AS_ASCII'] = False
     
-    CORS(app)
+    _configure_proxy_headers(app)
+    _configure_cors(app)
     
     setup_logger()
 
