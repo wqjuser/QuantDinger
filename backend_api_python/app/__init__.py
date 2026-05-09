@@ -152,13 +152,18 @@ def start_usdt_order_worker():
 def restore_running_strategies():
     """
     Restore running strategies on startup.
-    Local deployment: only restores IndicatorStrategy.
     """
     import os
     # You can disable auto-restore to avoid starting many threads on low-resource hosts.
     if os.getenv('DISABLE_RESTORE_RUNNING_STRATEGIES', 'false').lower() == 'true':
         logger.info("Startup strategy restore is disabled via DISABLE_RESTORE_RUNNING_STRATEGIES")
         return
+
+    # Avoid running twice with Flask reloader (local debug mode).
+    debug = os.getenv("PYTHON_API_DEBUG", "false").lower() == "true"
+    if debug:
+        if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+            return
     try:
         from app.services.strategy import StrategyService
         
@@ -179,12 +184,8 @@ def restore_running_strategies():
             strategy_type = strategy_info.get('strategy_type', '')
             
             try:
-                if strategy_type and strategy_type != 'IndicatorStrategy':
-                    logger.info(f"Skip restore unsupported strategy type: id={strategy_id}, type={strategy_type}")
-                    continue
-
                 success = trading_executor.start_strategy(strategy_id)
-                strategy_type_name = 'IndicatorStrategy'
+                strategy_type_name = strategy_type or 'Strategy'
                 
                 if success:
                     restored_count += 1

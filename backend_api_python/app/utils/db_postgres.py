@@ -284,7 +284,8 @@ class PostgresCursor:
             q_with_id = query.rstrip(';').rstrip() + ' RETURNING id'
             savepoint = '_pg_ins_ret_id'
             try:
-                self._cursor.execute(f"SAVEPOINT {savepoint}")
+                # Constant savepoint name; avoid SQL formatting.
+                self._cursor.execute("SAVEPOINT _pg_ins_ret_id")
             except Exception:
                 savepoint = None
 
@@ -301,7 +302,7 @@ class PostgresCursor:
                     pass
                 if savepoint:
                     try:
-                        self._cursor.execute(f"RELEASE SAVEPOINT {savepoint}")
+                        self._cursor.execute("RELEASE SAVEPOINT _pg_ins_ret_id")
                     except Exception:
                         pass
                 return result
@@ -318,7 +319,7 @@ class PostgresCursor:
                     raise
                 if savepoint:
                     try:
-                        self._cursor.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+                        self._cursor.execute("ROLLBACK TO SAVEPOINT _pg_ins_ret_id")
                     except Exception:
                         pass
                 # Retry without RETURNING id.  Leaves _last_insert_id as None.

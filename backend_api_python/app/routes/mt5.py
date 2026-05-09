@@ -7,6 +7,10 @@ Provides REST API for MT5 trading operations.
 from flask import Blueprint, request, jsonify
 
 from app.utils.logger import get_logger
+from app.utils.local_brokers import (
+    local_desktop_brokers_allowed,
+    desktop_broker_cloud_reject_message,
+)
 
 logger = get_logger(__name__)
 
@@ -49,6 +53,12 @@ def _get_client():
 def get_status():
     """Get MT5 connection status."""
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({
+                "connected": False,
+                "error": desktop_broker_cloud_reject_message(),
+            }), 403
+
         _ensure_mt5_imports()
         client = _get_client()
         status = client.get_connection_status()
@@ -80,6 +90,12 @@ def connect():
     global _client
     
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({
+                "success": False,
+                "error": desktop_broker_cloud_reject_message(),
+            }), 403
+
         _ensure_mt5_imports()
         
         data = request.get_json() or {}
@@ -143,6 +159,12 @@ def disconnect():
     global _client
     
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({
+                "success": False,
+                "error": desktop_broker_cloud_reject_message(),
+            }), 403
+
         if _client is not None:
             _client.disconnect()
             _client = None
@@ -158,6 +180,9 @@ def disconnect():
 def get_account():
     """Get account information."""
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({"success": False, "error": desktop_broker_cloud_reject_message()}), 403
+
         client = _get_client()
         if not client.connected:
             return jsonify({"success": False, "error": "Not connected to MT5"}), 400
@@ -173,6 +198,9 @@ def get_account():
 def get_positions():
     """Get open positions."""
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({"success": False, "error": desktop_broker_cloud_reject_message()}), 403
+
         client = _get_client()
         if not client.connected:
             return jsonify({"success": False, "error": "Not connected to MT5"}), 400
@@ -189,6 +217,9 @@ def get_positions():
 def get_orders():
     """Get pending orders."""
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({"success": False, "error": desktop_broker_cloud_reject_message()}), 403
+
         client = _get_client()
         if not client.connected:
             return jsonify({"success": False, "error": "Not connected to MT5"}), 400
@@ -205,6 +236,9 @@ def get_orders():
 def get_symbols():
     """Get available symbols."""
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({"success": False, "error": desktop_broker_cloud_reject_message()}), 403
+
         client = _get_client()
         if not client.connected:
             return jsonify({"success": False, "error": "Not connected to MT5"}), 400
@@ -234,6 +268,9 @@ def place_order():
     }
     """
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({"success": False, "error": desktop_broker_cloud_reject_message()}), 403
+
         client = _get_client()
         if not client.connected:
             return jsonify({"success": False, "error": "Not connected to MT5"}), 400
@@ -307,6 +344,9 @@ def close_position():
     }
     """
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({"success": False, "error": desktop_broker_cloud_reject_message()}), 403
+
         client = _get_client()
         if not client.connected:
             return jsonify({"success": False, "error": "Not connected to MT5"}), 400
@@ -351,6 +391,9 @@ def close_position():
 def cancel_order(ticket: int):
     """Cancel a pending order."""
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({"success": False, "error": desktop_broker_cloud_reject_message()}), 403
+
         client = _get_client()
         if not client.connected:
             return jsonify({"success": False, "error": "Not connected to MT5"}), 400
@@ -376,6 +419,9 @@ def get_quote():
     - symbol: Trading symbol (e.g., EURUSD)
     """
     try:
+        if not local_desktop_brokers_allowed():
+            return jsonify({"success": False, "error": desktop_broker_cloud_reject_message()}), 403
+
         client = _get_client()
         if not client.connected:
             return jsonify({"success": False, "error": "Not connected to MT5"}), 400
